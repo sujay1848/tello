@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/info_background"
+    android:orientation="vertical"
+    tools:context=".VideosFragment" >
+
+    <ImageView
+        android:id="@+id/nielsenLogo"
+        android:layout_width="207dp"
+        android:layout_height="98dp"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center"
+        android:adjustViewBounds="true"
+        android:src="@drawable/nielsen_logo" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp" >
+
+        <TextView
+            style="@style/txtLabel"
+            android:id="@+id/appName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Android Versions"
+            android:textSize="20dp" />
+    </LinearLayout>
+
+
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        
+        >
+       
+
+   
+    </TableLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp" >
+
+        <Button
+            android:id="@+id/btnOptOut"
+            style="@style/ButtonTextBlack14"
+            android:layout_width="100dp"
+            android:layout_height="30dp"
+            android:background="@drawable/btn_white"
+            android:text="Opt Out" >
+        </Button>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp" >
+
+        <Button
+            android:id="@+id/btnInfoBack"
+            style="@style/ButtonTextBlack14"
+            android:layout_width="100dp"
+            android:layout_height="30dp"
+            android:background="@drawable/btn_white"
+            android:text="Back" >
+        </Button>
+    </LinearLayout>
+
+</LinearLayout>

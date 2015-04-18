@@ -1,0 +1,123 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MovieDialogActivity" 
+    >
+
+    <TextView
+        android:id="@+id/lblMovieName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name" />
+
+    <EditText
+        android:id="@+id/txtMovieName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblMovieUrl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="URL" />
+
+    <EditText
+        android:id="@+id/txtMovieUrl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblMovieDataSrc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Data Source" />
+
+    <EditText
+        android:id="@+id/txtMovieDataSrc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblMovieAdModel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ad Model" />
+
+    <EditText
+        android:id="@+id/txtMovieAdModel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblBreakOut"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BreakOut" />
+
+    <EditText
+        android:id="@+id/txtBreakOut"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblTvParam"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TV" />
+
+    <EditText
+        android:id="@+id/txtTvParam"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:gravity="center_vertical"
+        >
+        <Button
+            android:id="@+id/btnMovieSave"
+            android:layout_width="0dip"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content" 
+            android:text="Save"
+            />
+        <Button
+            android:id="@+id/btnMovieCancel"
+            android:layout_width="0dip"
+            android:layout_weight="1.0"
+            android:layout_height="wrap_content" 
+            android:text="Cancel"
+            />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:gravity="center_vertical"
+        >
+
+        <Button
+            android:id="@+id/btnMovieRemove"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:text="Delete Movie"
+            />
+    </LinearLayout>
+
+</LinearLayout>
