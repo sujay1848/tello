@@ -22,7 +22,7 @@ public class MyMoviesFragment extends Fragment {
 	@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		final View rootView = inflater.inflate(R.layout.fragment_my_movies, container, false);
+		final View rootView = inflater.inflate(R.layout.fragment_mymovies, container, false);
 		GridView gridView = (GridView) rootView.findViewById(R.id.videoGridview);
 		gridView.setOnItemClickListener(new OnItemClickListener() {
 
