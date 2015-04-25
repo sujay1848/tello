@@ -288,15 +288,23 @@ public class VideosFragment extends Fragment implements
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				v.performClick();
-				if (controlLayout.getVisibility() == View.GONE) {
-					controlLayout.setVisibility(View.VISIBLE);
-					getActivity().getActionBar().show();
-				} else if (controlLayout.getVisibility() == View.VISIBLE) {
-					controlLayout.setVisibility(View.GONE);
-					getActivity().getActionBar().hide();
-				}
-				return true;
+			    switch (event.getAction()) {
+			    case MotionEvent.ACTION_DOWN:
+					if (controlLayout.getVisibility() == View.GONE) {
+						controlLayout.setVisibility(View.VISIBLE);
+						getActivity().getActionBar().show();
+					} else if (controlLayout.getVisibility() == View.VISIBLE) {
+						controlLayout.setVisibility(View.GONE);
+						getActivity().getActionBar().hide();
+					}
+			        break;
+			    case MotionEvent.ACTION_UP:
+			        v.performClick();
+			        break;
+			    default:
+			        break;
+			    }
+			    return true;
 			}
 		});
 	}

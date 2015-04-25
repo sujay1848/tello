@@ -224,14 +224,13 @@ public class MainActivity extends MasterActivity {
 		Fragment fragment = null;
 		switch (position) {
 		case 0:
-			Bundle videoFragmentBundle = new Bundle();
-			videoFragmentBundle.putInt(Global.videoId, -1);
-			
-			fragment = new VideosFragment();
-			fragment.setArguments(videoFragmentBundle);
+			fragment = new MyMoviesFragment();
 			break;
 		case 1:
-			fragment = new MyMoviesFragment();
+			Bundle videoFragmentBundle = new Bundle();
+			videoFragmentBundle.putInt(Global.videoId, -1);
+			fragment = new VideosFragment();
+			fragment.setArguments(videoFragmentBundle);
 			break;
 		case 2:
 			fragment = new HistoryFragment();
