@@ -24,6 +24,8 @@ public class Global {
     public static final String    keyMetaTag       = "metaTag";
     public static final String    keyBreakOut      = "breakOut";
     public static final String    keyTvParam       = "tvParam";
+    
+    public static final String    videoId          = "videoId";
 
     public static final String    keySdkVer        = "sdkVer";
     public static final String    keyNuid          = "nuid";
@@ -54,7 +56,7 @@ public class Global {
     public static final String COL_STREAMHISTORY_NAME       	= "NAME";
     public static final String COL_STREAMHISTORY_URL        	= "URL";
     public static final String COL_STREAMHISTORY_RATING        	= "RATING";
-    public static final String COL_STREAMHISTORY_PLAY_COUNT 	= "PLAY_COUNT";
+    public static final String COL_STREAMHISTORY_LAST_PLAYED 	= "LAST_PLAYED";
     public static final String COL_STREAMHISTORY_ID    			= "ID";
     public static final int SIZE_STREAMHISTORY					= 5;
 }

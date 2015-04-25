@@ -282,7 +282,7 @@ public class Player implements OnBufferingUpdateListener, OnCompletionListener,
         boolean ret = false;
         Log.v(TAG, "startVideoPlayback");
         if ((mVideoWidth > 0) && (mVideoHeight > 0))
-            mSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
+            //mSurfaceHolder.setFixedSize(mVideoWidth, mVideoHeight);
         if (mMediaPlayer != null && !isPlaying()  && this.videoFragment != null) {
             try {
                 if (setPlayerState(PLAYER_STATE.PLAYING)) {

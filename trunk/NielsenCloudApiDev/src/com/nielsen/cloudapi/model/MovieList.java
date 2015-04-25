@@ -77,6 +77,11 @@ public class MovieList
             return getMovieAtIndex(this.mMovieIdx);
         }
     }
+    
+    public void setCurrentMovie(int index)
+    {
+        this.mMovieIdx = index;
+    }
 
     public MovieItem getCurrentMovie()
     {

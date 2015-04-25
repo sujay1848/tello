@@ -1,56 +1,67 @@
 package com.nielsen.cloudapi.model;
 
+import java.util.Date;
+
 /**
- * POJO for holding the serialized video info from the SQLite DB.
- * See {@link DatabaseHelper}
+ * POJO for holding the serialized video info from the SQLite DB. See
+ * {@link DatabaseHelper}
+ * 
  * @author sanjankar
  *
  */
-public class VideoStream {
+public class VideoStream implements Comparable<VideoStream> {
 
-	public String DISPLAY_NAME;
-	public String STREAM_URL;
-	public String ID3_TAG;
-	public int RATING;
-	public int COUNT;
+	public String displayName;
+	public String streamUrl;
+	public int rating;
+	public Date lastPlayed;
 
-	public String getDISPLAY_NAME() {
-		return DISPLAY_NAME;
+	public VideoStream(String displayName, String streamUrl, int rating, Date lastPlayed) {
+		this.displayName = displayName;
+		this.streamUrl = streamUrl;
+		this.rating = rating;
+		this.lastPlayed = lastPlayed;
+	}
+	
+	public String getDisplayName() {
+		return displayName;
 	}
 
-	public void setDISPLAY_NAME(String dISPLAY_NAME) {
-		DISPLAY_NAME = dISPLAY_NAME;
+	public void setDisplayName(String displayName) {
+		this.displayName = displayName;
 	}
 
-	public String getSTREAM_URL() {
-		return STREAM_URL;
+	public String getStreamUrl() {
+		return streamUrl;
 	}
 
-	public void setSTREAM_URL(String sTREAM_URL) {
-		STREAM_URL = sTREAM_URL;
+	public void setStreamUrl(String streamUrl) {
+		this.streamUrl = streamUrl;
 	}
 
-	public String getID3_TAG() {
-		return ID3_TAG;
+	public int getRating() {
+		return rating;
 	}
 
-	public void setID3_TAG(String iD3_TAG) {
-		ID3_TAG = iD3_TAG;
+	public void setRating(int rating) {
+		this.rating = rating;
 	}
 
-	public int getRATING() {
-		return RATING;
+	public Date getLastPlayed() {
+		return lastPlayed;
 	}
 
-	public void setRATING(int rATING) {
-		RATING = rATING;
+	public void setLastPlayed(Date lastPlayed) {
+		this.lastPlayed = lastPlayed;
 	}
 
-	public int getCOUNT() {
-		return COUNT;
-	}
-
-	public void setCOUNT(int cOUNT) {
-		COUNT = cOUNT;
+	@Override
+	public int compareTo(VideoStream another) {
+		if (this.lastPlayed.after(another.lastPlayed))
+			return -1;
+		else if (this.lastPlayed.equals(another.lastPlayed))
+			return 0;
+		else
+			return 1;
 	}
 }

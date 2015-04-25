@@ -1,4 +1,4 @@
-package com.nielsen.cloudapi.model;
+package com.nielsen.cloudapi.adapter;
 
 public class NavDrawerItem {
 	

@@ -1,4 +1,4 @@
-package com.nielsen.cloudapi.fragment;
+package com.nielsen.cloudapi.activity;
 
 /*
  * 30.Mar.14    LFR    Changed extends ListActivity to masterActivity for Background detection
@@ -9,28 +9,23 @@ package com.nielsen.cloudapi.fragment;
 
 import java.util.ArrayList;
 
-import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.nielsen.cloudapi.activity.MovieDialogActivity;
-import com.nielsen.cloudapi.activity.R;
 import com.nielsen.cloudapi.model.Global;
 import com.nielsen.cloudapi.model.MovieItem;
 import com.nielsen.cloudapi.model.MovieList;
 
 
-public class MoviesFragment extends Fragment
+public class MoviesActivity extends MasterActivity
 {
-    private final String TAG = MoviesFragment.class.getSimpleName();
+    private final String TAG = MoviesActivity.class.getSimpleName();
     private final String NEW_ENTRY = "+ + + ADD NEW CONTENT + + +";
     private ListView movListView;
     private MovieList movies;
@@ -38,17 +33,15 @@ public class MoviesFragment extends Fragment
     private int targetIdx;
     private ArrayAdapter<String> adapter;
     private boolean moviesChanged = false;
-    private View rootView;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        rootView = inflater.inflate(R.layout.movies_activity, container,false);
+        setContentView(R.layout.movies_activity);
 
-        movListView = (ListView) rootView.findViewById(R.id.listOfMovies);
+        movListView = (ListView) findViewById(R.id.listOfMovies);
         try {
-            movies = new MovieList(rootView.getContext());
+            movies = new MovieList(getApplicationContext());
         } catch (Exception e){
             //TODO: add handling;
         }
@@ -79,7 +72,7 @@ public class MoviesFragment extends Fragment
                     mUrl     = targetMovie.getUrl();
                 }
 
-                Intent launchIntent = new Intent(getActivity(), MovieDialogActivity.class);
+                Intent launchIntent = new Intent(MoviesActivity.this, MovieDialogActivity.class);
                 final Bundle pars = new Bundle();
 
                 pars.putInt(Global.keyMovIdx, targetIdx);
@@ -91,18 +84,17 @@ public class MoviesFragment extends Fragment
                 pars.putString(Global.keyMovUrl, mUrl);
                 launchIntent.putExtras(pars);
 
-                MoviesFragment.this.startActivityForResult(launchIntent, Global.MOV_DIALOG_REQUEST);
+                MoviesActivity.this.startActivityForResult(launchIntent, Global.MOV_DIALOG_REQUEST);
             }
         });
         Log.e(TAG,"onCreate MoviesActivity");
-        return rootView;
     }
 
     private void loadList()
     {
         if (movies != null) {
             movieNames = movies.getListOfNames2(NEW_ENTRY);
-            adapter = new ArrayAdapter<String>(getActivity(), R.layout.movie_entry, R.id.movieName, movieNames);
+            adapter = new ArrayAdapter<String>(this, R.layout.movie_entry, R.id.movieName, movieNames);
             movListView.setAdapter(adapter);
         }
     }
@@ -114,8 +106,8 @@ public class MoviesFragment extends Fragment
         if (moviesChanged)
             i.putExtra(Global.keyMovChanged, "1");
 
-        //setResult(getActivity().RESULT_OK, i);
-        //finish();
+        setResult(RESULT_OK, i);
+        finish();
     }
 
     public void onBackPressed()
@@ -123,12 +115,12 @@ public class MoviesFragment extends Fragment
         bailOut();
     }
 
-    /*@Override
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if ((requestCode == Global.MOV_DIALOG_REQUEST) && (resultCode == getActivity().RESULT_OK) && (movies != null)) {
+        if ((requestCode == Global.MOV_DIALOG_REQUEST) && (resultCode == RESULT_OK) && (movies != null)) {
             int action = data.getIntExtra(Global.keyActivitAction, 0);
             if (action == 1) { // Save
                 String mName    = data.getStringExtra(Global.keyMovName);
@@ -152,5 +144,5 @@ public class MoviesFragment extends Fragment
                 moviesChanged = true;
             }
         }
-    }*/
+    }
 }

@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -46,24 +47,29 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
@@ -72,12 +78,12 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.nielsen.cloudapi.activity.MainActivity;
 import com.nielsen.cloudapi.activity.MasterActivity;
 import com.nielsen.cloudapi.activity.R;
 import com.nielsen.cloudapi.model.AdvertisingIdClient;
 import com.nielsen.cloudapi.model.AdvertisingIdClient.AdInfo;
 import com.nielsen.cloudapi.model.CloudAPI;
+import com.nielsen.cloudapi.model.DatabaseHelper;
 import com.nielsen.cloudapi.model.Global;
 import com.nielsen.cloudapi.model.MovieItem;
 import com.nielsen.cloudapi.model.MovieList;
@@ -85,7 +91,7 @@ import com.nielsen.cloudapi.model.Player;
 
 @SuppressLint("SimpleDateFormat")
 public class VideosFragment extends Fragment implements
-		OnItemClickListener, OnClickListener, OnSeekBarChangeListener {
+		OnItemClickListener, OnClickListener, OnSeekBarChangeListener,OnRefreshListener {
 
 	private final String TAG = VideosFragment.class.getSimpleName();
 	
@@ -102,7 +108,7 @@ public class VideosFragment extends Fragment implements
 	private static boolean appDisabled = false;
 
 	private static String ocrMetaData;
-	private static boolean sendOCR = false;
+	
 	private static boolean smoothing = false;
 
 	private static String nuid = "unknown";
@@ -141,20 +147,25 @@ public class VideosFragment extends Fragment implements
 	public static int appLogSize = 0;
 	public static String finalId3;
 	private static VideosFragment mMainActivity = null;
-	View rootView = null;
+	private View rootView = null;
 	private static String sessionId;
 	private Handler durationHandler = new Handler();
+	private int videoIndex =-1;
+	private SwipeRefreshLayout swipeLayout;
 
+	private ImageButton ibtnPause;
+	private View controlLayout;
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		mMainActivity = this;		
-		rootView = inflater.inflate(R.layout.activity_main_player, container, false);
-
+		mMainActivity = this;
+		getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		rootView = inflater.inflate(R.layout.fragment_player, container, false);
 		mContext = rootView.getContext();
+		controlLayout = rootView.findViewById(R.id.controlLayout); 
 		appPkgName = mContext.getPackageName();
 		appActivity = getActivity();
 
@@ -170,20 +181,22 @@ public class VideosFragment extends Fragment implements
 		}
 
 		//Insert your own name here
-		appName = "NielsenCloudApi";
+		appName = getString(R.string.app_name);
 		//Insert your own AppID here
-		appId = "FHG163HR-BH45-JKY6-BKH7-67GJKY68GJK8";
+		appId = getString(R.string.app_id);
 		videoCensusId = "AppSampleVcId";
 		appClientId = "Sujay Anjankar";
 
 		ocrMetaData = "{\"type\":\"ad\","
 				+ "\"nol_ocrtag\":\"http://secure-aws.imrworldwide.com/cgi-bin/m?ci=ENT29825&am=3&ep=1&at=view&rt=banner&st=image&ca=1234&cr=crv194436&pc=plc1234320\" }";
 
-		appLoadAppSettings();
-
 		try {
 			mMovies = new MovieList(mContext);
 			mCurrentMovie = mMovies.getCurrentMovie();
+
+			//current index of the video to be played. Default -1
+			final Bundle extras = this.getArguments();
+			videoIndex = extras.getInt(Global.videoId);
 		} catch (Exception e) {
 			mMovies = null;
 			uiSetPopMessage("Movie list empty");
@@ -198,12 +211,11 @@ public class VideosFragment extends Fragment implements
 		} catch (Exception e) {
 			mPlayer = null;
 		}
-
+		
 		uiResetPlayPause();
 
 		uiSetPopMessage("Please hit the play button to start playing");
 		new LongOperation().execute("");
-		
 		return rootView;
 		
 	}
@@ -223,11 +235,46 @@ public class VideosFragment extends Fragment implements
 
 		//ibtnSettings = uiBindImageButton(R.id.btnSettings);
 		ibtnPlay = uiBindImageButton(R.id.btnPlay);
-		//ibtnPause = uiBindImageButton(R.id.btnPause);
+		ibtnPause = uiBindImageButton(R.id.btnPause);
 		 //ibtnInfo     = uiBindImageButton(R.id.btnInfo);
 		ibtnUp = uiBindImageButton(R.id.btnUp);
 		ibtnDown = uiBindImageButton(R.id.btnDown);
 		ibtnReplay = uiBindImageButton(R.id.btnReplay);
+		swipeLayout = (SwipeRefreshLayout) rootView.findViewById(R.id.swipe_container);
+	    swipeLayout.setOnRefreshListener(this);
+	    swipeLayout.setColorSchemeColors(android.R.color.holo_blue_bright, 
+	            android.R.color.holo_green_light, 
+	            android.R.color.holo_orange_light, 
+	            android.R.color.holo_red_light);
+	    
+	    ViewTreeObserver vto = swipeLayout.getViewTreeObserver();
+	    vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+	        @Override
+	        public void onGlobalLayout() {
+	            // Calculate the trigger distance.
+	            final DisplayMetrics metrics = getResources().getDisplayMetrics();
+	            Float mTotalDragDistance = Math.min(
+	                    ((View) swipeLayout.getParent()).getHeight() * 0.6f,
+	                    120 * metrics.density);
+
+	            try {
+	                // Set the internal trigger distance using reflection.
+	                Field field = SwipeRefreshLayout.class.getDeclaredField("mTotalDragDistance");
+	                field.setAccessible(true);
+	                field.setFloat(swipeLayout, mTotalDragDistance);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+
+	            // Only needs to be done once so remove listener.
+	            ViewTreeObserver obs = swipeLayout.getViewTreeObserver();
+	            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+	                obs.removeGlobalOnLayoutListener(this);
+	            } else {
+	                obs.removeGlobalOnLayoutListener(this);
+	            }
+	        }
+	    });
 
 		final Handler handler = new Handler();
 		handler.postDelayed(new Runnable() {
@@ -241,11 +288,30 @@ public class VideosFragment extends Fragment implements
 			
 			@Override
 			public boolean onTouch(View v, MotionEvent event) {
-				uiManagePlayPause(overridePlayState);
-				ibtnPlay.setVisibility(View.VISIBLE);
+				v.performClick();
+				if (controlLayout.getVisibility() == View.GONE) {
+					controlLayout.setVisibility(View.VISIBLE);
+					getActivity().getActionBar().show();
+				} else if (controlLayout.getVisibility() == View.VISIBLE) {
+					controlLayout.setVisibility(View.GONE);
+					getActivity().getActionBar().hide();
+				}
 				return true;
 			}
 		});
+	}
+	
+	@Override public void onRefresh() {
+	   
+		Log.i("onRefresh","Refreshing Video");
+        uiResetLog();
+		if (mPlayer != null)
+			mPlayer.resetMediaPlayer();
+		else
+			uiSetPopMessage("Can't PLAY video");
+		newMovie2Play = true;
+		uiManagePlayPause(R.id.btnPlay);
+		swipeLayout.setRefreshing(false);
 	}
 
 	public SurfaceView uiGetPlayerView() {
@@ -254,7 +320,7 @@ public class VideosFragment extends Fragment implements
 
 	public void uiResetPlayPause() {
 		ibtnPlay.setSelected(false);
-		//ibtnPause.setSelected(false);
+		ibtnPause.setSelected(false);
 		appStopMeteringVideo();
 	}
 
@@ -358,14 +424,15 @@ public class VideosFragment extends Fragment implements
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss.SSS");
 		final String buf = String.format("%s %s%n", sdf.format(new Date()),
 				logEntry);
-
-		getActivity().runOnUiThread(new Runnable() {
-			public void run() {
-				if (MasterActivity.mAppInBackground)
-					return;
-				appAppendLogFile(buf);
-			}
-		});
+		if(getActivity() != null){
+			getActivity().runOnUiThread(new Runnable() {
+				public void run() {
+					if (MasterActivity.mAppInBackground)
+						return;
+					appAppendLogFile(buf);
+				}
+			});
+		}
 	}
 	
 	//TODO comment
@@ -433,6 +500,16 @@ public class VideosFragment extends Fragment implements
 		
 		
 		boolean toPlay = (tappedBtnId == R.id.btnPlay);
+		
+		//manage play pause visibility 
+		if(toPlay){
+			ibtnPause.setVisibility(View.VISIBLE);
+			ibtnPlay.setVisibility(View.GONE);
+			controlLayout.setVisibility(View.GONE);
+		}else{
+			ibtnPause.setVisibility(View.GONE);
+			ibtnPlay.setVisibility(View.VISIBLE);
+		}
 
 		if (mPlayer == null) {
 			try {
@@ -445,12 +522,15 @@ public class VideosFragment extends Fragment implements
 
 		if (mPlayer != null && toPlay != mPlayer.isPlaying()) {
 			ibtnPlay.setSelected(toPlay);
-			//ibtnPause.setSelected(!toPlay);
+			ibtnPause.setSelected(!toPlay);
 
 			if (newMovie2Play) {
 				if (toPlay) {
 					if (mPlayer.changeChannel(mCurrentMovie.getUrl())) {
 						appStartMeteringVideo();
+						DatabaseHelper db = new DatabaseHelper(getActivity(), getActivity()
+								.getResources().getString(R.string.DB_TABLE_NAME), null, 1);
+						db.updateLastPlayed(mCurrentMovie.getName());
 						newMovie2Play = false;
 					}
 				}
@@ -465,7 +545,6 @@ public class VideosFragment extends Fragment implements
 				}
 			}
 		}
-		ibtnPlay.setVisibility(View.GONE);
 		overridePlayState = 0;
 		if (mPlayer != null)
 			Log.d(TAG, (mPlayer.isPlaying() ? "PLAYING" : "PAUSE"));
@@ -491,7 +570,7 @@ public class VideosFragment extends Fragment implements
 
 		switch (pressedBtn) {
 		case R.id.btnPlay:
-		//case R.id.btnPause:
+		case R.id.btnPause:
 			uiManagePlayPause(pressedBtn);
 			break;
 
@@ -595,87 +674,7 @@ public class VideosFragment extends Fragment implements
 	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 	}
 
-	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-
-		if (resultCode != MainActivity.RESULT_OK)
-			return;
-
-		String temp;
-		
-		   
-
-		if (requestCode == Global.INFO_REQUEST) {
-			temp = data.getStringExtra(Global.keyOptResult);
-
-		} else if (requestCode == Global.SETTINGS_REQUEST) {
-			temp = data.getStringExtra(Global.keySdkCfgUrl);
-			if (temp != null) {
-				sdkCfgUrl = temp;
-				Log.e(TAG, "sdkCfgUrl changed: " + temp);
-
-			}
-
-			temp = data.getStringExtra(Global.keyAppId);
-			if (temp != null) {
-				appId = temp;
-				Log.e(TAG, "appId changed: " + temp);
-			}
-
-			temp = data.getStringExtra(Global.keyAppName);
-			if (temp != null) {
-				appName = temp;
-				Log.e(TAG, "appName changed: " + temp);
-			}
-
-			temp = data.getStringExtra(Global.keyAppVer);
-			if (temp != null) {
-				appVersion = temp;
-				Log.e(TAG, "appVersion changed: " + temp);
-			}
-
-			temp = data.getStringExtra(Global.keyAppClientId);
-			if (temp != null) {
-				appClientId = temp;
-				Log.e(TAG, "appClientId changed: " + temp);
-			}
-
-			temp = data.getStringExtra(Global.keyVideoCensusId);
-			if (temp != null) {
-				videoCensusId = temp;
-				Log.e(TAG, "videoCensusId changed: " + temp);
-			}
-
-			temp = data.getStringExtra(Global.keySFcode);
-			if (temp != null) {
-				sfCode = temp;
-				Log.e(TAG, "sfCode changed: " + temp);
-
-			}
-
-			temp = data.getStringExtra(Global.keyMovChanged);
-			if (temp != null) {
-				Log.e(TAG, "Movies Changed changed: " + temp);
-				try {
-					mMovies = new MovieList(mContext);
-				} catch (Exception e) {
-					mMovies = null;
-				}
-			}
-			appSaveAppSettings();
-		} else if (requestCode == Global.METATAG_REQUEST) {
-			if (data != null) {
-				temp = data.getStringExtra(Global.keyMetaTag);
-				if (temp != null) {
-					ocrMetaData = temp;
-					sendOCR = true;
-					Log.e(TAG, "OCR changed: " + temp);
-					appSaveAppSettings();
-				}
-			}
-		}
-	}
+	
 
 	private void updateSeekBar() {
 		boolean showIt = ((mPlayer != null) && (mPlayer.isPlaying()) && mPlayer.videoPosition() > 0);
@@ -724,40 +723,6 @@ public class VideosFragment extends Fragment implements
 		}).start();
 		
 		
-	}
-
-	private void appLoadAppSettings() {
-		SharedPreferences appData = mContext.getSharedPreferences(
-				Global.keyAppData, 0);
-
-		appId = appData.getString(Global.keyAppId, appId);
-		appName = appData.getString(Global.keyAppName, appName);
-		appVersion = appData.getString(Global.keyAppVer, appVersion);
-		appClientId = appData.getString(Global.keyAppClientId, appClientId);
-		videoCensusId = appData.getString(Global.keyVideoCensusId,
-				videoCensusId);
-		sfCode = appData.getString(Global.keySFcode, sfCode);
-		sdkCfgUrl = appData.getString(Global.keySdkCfgUrl, sdkCfgUrl);
-		ocrMetaData = appData.getString(Global.keyMetaTag, ocrMetaData);
-		appDisabled = appData.getBoolean(Global.keyAppDisabled, appDisabled);
-	}
-
-	private void appSaveAppSettings() {
-		SharedPreferences appData = mContext.getSharedPreferences(
-				Global.keyAppData, 0);
-		SharedPreferences.Editor editor = appData.edit();
-
-		editor.putString(Global.keyAppId, appId);
-		editor.putString(Global.keyAppName, appName);
-		editor.putString(Global.keyAppVer, appVersion);
-		editor.putString(Global.keyAppClientId, appClientId);
-		editor.putString(Global.keyVideoCensusId, videoCensusId);
-		editor.putString(Global.keySFcode, sfCode);
-		editor.putString(Global.keySdkCfgUrl, sdkCfgUrl);
-		editor.putString(Global.keyMetaTag, ocrMetaData);
-		editor.putBoolean(Global.keyAppDisabled, appDisabled);
-
-		editor.commit();
 	}
 
 	private String appGetStringValue(String key) {
@@ -1151,6 +1116,17 @@ public class VideosFragment extends Fragment implements
 	            return advertisingId;
 	        }
 	        
+	        @Override
+    		protected void onPostExecute(String result) {
+    			if(videoIndex > -1){
+    				mCurrentMovie = mMovies.getMovieAtIndex(videoIndex);
+    				mMovies.setCurrentMovie(videoIndex);
+    				mPlayer.resetMediaPlayer();
+    				newMovie2Play = true;
+    				uiDisplayMovieName();
+    				uiManagePlayPause(R.id.btnPlay);
+    			}
+    		}
 	        
 	      
 	 }

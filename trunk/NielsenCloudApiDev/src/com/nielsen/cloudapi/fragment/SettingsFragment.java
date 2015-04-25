@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.nielsen.cloudapi.activity.MoviesActivity;
 import com.nielsen.cloudapi.activity.R;
 import com.nielsen.cloudapi.model.Global;
 
@@ -67,7 +68,7 @@ public class SettingsFragment extends Fragment {
 		btnMovies.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				launchIntent = new Intent(rootView.getContext(),
-						MoviesFragment.class);
+						MoviesActivity.class);
 				getActivity().startActivityForResult(launchIntent,
 						Global.SETTINGS_REQUEST);
 			}
