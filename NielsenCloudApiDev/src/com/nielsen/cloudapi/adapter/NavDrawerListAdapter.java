@@ -12,7 +12,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.nielsen.cloudapi.activity.R;
-import com.nielsen.cloudapi.model.NavDrawerItem;
 
 public class NavDrawerListAdapter extends BaseAdapter {
 	

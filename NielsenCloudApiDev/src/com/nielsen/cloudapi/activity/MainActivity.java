@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.os.Bundle;
@@ -18,28 +22,32 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.nielsen.cloudapi.adapter.NavDrawerItem;
 import com.nielsen.cloudapi.adapter.NavDrawerListAdapter;
-import com.nielsen.cloudapi.fragment.MoviesFragment;
+import com.nielsen.cloudapi.fragment.HistoryFragment;
 import com.nielsen.cloudapi.fragment.MyMoviesFragment;
 import com.nielsen.cloudapi.fragment.OptOutFragment;
 import com.nielsen.cloudapi.fragment.SettingsFragment;
 import com.nielsen.cloudapi.fragment.VideosFragment;
 import com.nielsen.cloudapi.model.DatabaseHelper;
 import com.nielsen.cloudapi.model.Global;
-import com.nielsen.cloudapi.model.NavDrawerItem;
+import com.nielsen.cloudapi.model.MovieList;
 import com.nielsen.cloudapi.model.Player;
 
 @SuppressWarnings("deprecation")
 public class MainActivity extends MasterActivity {
 	private DrawerLayout mDrawerLayout;
 	private ListView mDrawerList;
+	private static boolean sendOCR = false;
 	private ActionBarDrawerToggle mDrawerToggle;
+	private final String TAG = MainActivity.class.getSimpleName();
 	
 	// nav drawer title
 	private CharSequence mDrawerTitle;
 
 	// used to store app title
 	private CharSequence mTitle;
+	private static boolean appDisabled = false;
 	private static String appName, appId, appVersion, appBuiltNo, videoCensusId, appClientId;
 	private static String ocrMetaData;
 	private static String advertisingId;
@@ -84,18 +92,47 @@ public class MainActivity extends MasterActivity {
 		mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
 
 		navDrawerItems = new ArrayList<NavDrawerItem>();
-
-		// adding nav drawer items to array
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[0], navMenuIcons.getResourceId(0, -1)));
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[1], navMenuIcons.getResourceId(1, -1)));
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[2], navMenuIcons.getResourceId(2, -1)));
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[3], navMenuIcons.getResourceId(3, -1), true, "22"));
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[4], navMenuIcons.getResourceId(4, -1)));
-		navDrawerItems.add(new NavDrawerItem(navMenuTitles[5], navMenuIcons.getResourceId(5, -1), true, "50+"));
 		
-
+		// adding nav drawer items to array
+		int i =0;
+		for(String name : navMenuTitles){
+			System.out.println(name);
+			if(name.equalsIgnoreCase("Videos")){
+				try {
+					navDrawerItems.add(new NavDrawerItem(name, navMenuIcons.getResourceId(i, -1),true,""+new MovieList(this).mList.size()));
+				} catch (Exception e) {
+					navDrawerItems.add(new NavDrawerItem(name, navMenuIcons.getResourceId(i, -1)));
+					e.printStackTrace();
+				}
+			}else{
+				navDrawerItems.add(new NavDrawerItem(name, navMenuIcons.getResourceId(i, -1)));
+			}
+			i++;
+		}
 		// Recycle the typed array
 		navMenuIcons.recycle();
+		
+		
+		PackageManager manager = getPackageManager();
+		try {
+			PackageInfo appInfo = manager.getPackageInfo(getPackageName(),
+					0);
+			appVersion = appInfo.versionName;
+			appBuiltNo = Integer.toString(appInfo.versionCode);
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		//Insert your own name here
+		appName = getString(R.string.app_name);
+		//Insert your own AppID here
+		appId = getString(R.string.app_id);
+		videoCensusId = "AppSampleVcId";
+		appClientId = "Sujay Anjankar";
+
+		ocrMetaData = "{\"type\":\"ad\","
+				+ "\"nol_ocrtag\":\"http://secure-aws.imrworldwide.com/cgi-bin/m?ci=ENT29825&am=3&ep=1&at=view&rt=banner&st=image&ca=1234&cr=crv194436&pc=plc1234320\" }";
+		appLoadAppSettings();
 
 		mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
 
@@ -132,7 +169,7 @@ public class MainActivity extends MasterActivity {
 			displayView(0);
 		}
 	}
-
+	
 	/**
 	 * Slide menu item click listener
 	 * */
@@ -187,9 +224,25 @@ public class MainActivity extends MasterActivity {
 		Fragment fragment = null;
 		switch (position) {
 		case 0:
+			Bundle videoFragmentBundle = new Bundle();
+			videoFragmentBundle.putInt(Global.videoId, -1);
+			
 			fragment = new VideosFragment();
+			fragment.setArguments(videoFragmentBundle);
 			break;
 		case 1:
+			fragment = new MyMoviesFragment();
+			break;
+		case 2:
+			fragment = new HistoryFragment();
+			break;
+		case 3:
+			Bundle fragOptoutFragment = new Bundle();
+			fragment = new OptOutFragment();
+			appendAppStrBundle(fragOptoutFragment, Global.keyWebUrl);
+			fragment.setArguments(fragOptoutFragment);
+			break;
+		case 4:
 			Bundle fragSettingsBundle = new Bundle();
 			fragment = new SettingsFragment();
 			appendAppStrBundle(fragSettingsBundle, Global.keySdkCfgUrl);
@@ -203,18 +256,8 @@ public class MainActivity extends MasterActivity {
 			appendAppStrBundle(fragSettingsBundle, Global.keyDataSrc);
 			fragment.setArguments(fragSettingsBundle);
 			break;
-		case 2:
-			Bundle fragOptoutFragment = new Bundle();
-			fragment = new OptOutFragment();
-			appendAppStrBundle(fragOptoutFragment, Global.keyWebUrl);
-			fragment.setArguments(fragOptoutFragment);
-			break;
-		case 3:
-			fragment = new MoviesFragment();
-			break;
-		case 4:
-			fragment = new MyMoviesFragment();
-			break;
+		
+			
 		
 
 		default:
@@ -308,5 +351,121 @@ public class MainActivity extends MasterActivity {
 
 		else
 			return null;
+	}
+	
+	private void appLoadAppSettings() {
+		SharedPreferences appData = getSharedPreferences(
+				Global.keyAppData, 0);
+
+		appId = appData.getString(Global.keyAppId, appId);
+		appName = appData.getString(Global.keyAppName, appName);
+		appVersion = appData.getString(Global.keyAppVer, appVersion);
+		appClientId = appData.getString(Global.keyAppClientId, appClientId);
+		videoCensusId = appData.getString(Global.keyVideoCensusId,
+				videoCensusId);
+		sfCode = appData.getString(Global.keySFcode, sfCode);
+		sdkCfgUrl = appData.getString(Global.keySdkCfgUrl, sdkCfgUrl);
+		ocrMetaData = appData.getString(Global.keyMetaTag, ocrMetaData);
+		appDisabled = appData.getBoolean(Global.keyAppDisabled, appDisabled);
+	}
+	
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+
+		if (resultCode != MainActivity.RESULT_OK)
+			return;
+
+		String temp;
+		
+		   
+
+		if (requestCode == Global.INFO_REQUEST) {
+			temp = data.getStringExtra(Global.keyOptResult);
+
+		} else if (requestCode == Global.SETTINGS_REQUEST) {
+			temp = data.getStringExtra(Global.keySdkCfgUrl);
+			if (temp != null) {
+				sdkCfgUrl = temp;
+				Log.e(TAG, "sdkCfgUrl changed: " + temp);
+
+			}
+
+			temp = data.getStringExtra(Global.keyAppId);
+			if (temp != null) {
+				appId = temp;
+				Log.e(TAG, "appId changed: " + temp);
+			}
+
+			temp = data.getStringExtra(Global.keyAppName);
+			if (temp != null) {
+				appName = temp;
+				Log.e(TAG, "appName changed: " + temp);
+			}
+
+			temp = data.getStringExtra(Global.keyAppVer);
+			if (temp != null) {
+				appVersion = temp;
+				Log.e(TAG, "appVersion changed: " + temp);
+			}
+
+			temp = data.getStringExtra(Global.keyAppClientId);
+			if (temp != null) {
+				appClientId = temp;
+				Log.e(TAG, "appClientId changed: " + temp);
+			}
+
+			temp = data.getStringExtra(Global.keyVideoCensusId);
+			if (temp != null) {
+				videoCensusId = temp;
+				Log.e(TAG, "videoCensusId changed: " + temp);
+			}
+
+			temp = data.getStringExtra(Global.keySFcode);
+			if (temp != null) {
+				sfCode = temp;
+				Log.e(TAG, "sfCode changed: " + temp);
+
+			}
+
+			temp = data.getStringExtra(Global.keyMovChanged);
+			/*if (temp != null) {
+				Log.e(TAG, "Movies Changed changed: " + temp);
+				try {
+					mMovies = new MovieList(this);
+				} catch (Exception e) {
+					mMovies = null;
+				}
+			}*/
+			appSaveAppSettings();
+		} else if (requestCode == Global.METATAG_REQUEST) {
+			if (data != null) {
+				temp = data.getStringExtra(Global.keyMetaTag);
+				if (temp != null) {
+					ocrMetaData = temp;
+					sendOCR = true;
+					Log.e(TAG, "OCR changed: " + temp);
+					appSaveAppSettings();
+				}
+			}
+		}
+	}
+	
+	private void appSaveAppSettings() {
+		SharedPreferences appData = getSharedPreferences(
+				Global.keyAppData, 0);
+		SharedPreferences.Editor editor = appData.edit();
+
+		editor.putString(Global.keyAppId, appId);
+		editor.putString(Global.keyAppName, appName);
+		editor.putString(Global.keyAppVer, appVersion);
+		editor.putString(Global.keyAppClientId, appClientId);
+		editor.putString(Global.keyVideoCensusId, videoCensusId);
+		editor.putString(Global.keySFcode, sfCode);
+		editor.putString(Global.keySdkCfgUrl, sdkCfgUrl);
+		editor.putString(Global.keyMetaTag, ocrMetaData);
+		editor.putBoolean(Global.keyAppDisabled, appDisabled);
+
+		editor.commit();
 	}
 }

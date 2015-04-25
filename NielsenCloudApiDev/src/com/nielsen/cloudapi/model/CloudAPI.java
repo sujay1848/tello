@@ -174,7 +174,7 @@ public class CloudAPI {
 			con.setRequestMethod("DELETE");
 			con.setRequestProperty("Content-Type",  "application/json");
 			
-			int responseCode = con.getResponseCode();
+//			/int responseCode = con.getResponseCode();
 
 		} catch (IOException e){
 			
